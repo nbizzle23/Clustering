@@ -15,10 +15,11 @@ install.packages(janitor)
 install.packages(scales) 
 install.packages(ballr)
 install.packages(knitr)
-install.packages(shiny)
+install.packages(dplyr)
 install.packages(ggplot2)
 install.packages(ggthemes)
-install.packages(caTools)
+install.packages(corrplot)
+install.packages(ggcorrplot)
 ```
 
 ### Installing
@@ -33,7 +34,8 @@ library(ballr)
 library(knitr)
 library(ggplot2)
 library(ggthemes)
-library(caTools)
+library(corrplot)
+library(ggcorrplot)
 
 
 ```

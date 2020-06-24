@@ -1,12 +1,12 @@
 ---
-title: "Clustering Positions in Basketball"
+title: "Clustering Basketball Players by Position"
 author: "Nicholas Burke"
 date: "05 December 2019"
 output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
 ```
 
 ## Introduction
@@ -20,7 +20,7 @@ In order to perform K-means clustering, first we need to determine the appropria
 
 2. Iterate until the cluster assignments stop changing.
 
-3. For each of the $K$ clusters, compute the cluster centroid. The $k^{th}$ cluster centroid is the vector of the p feature means for the observations in the $k^{th}$ cluster and finds the centroid of each cluster.
+3. For each of the $K$ clusters, compute the cluster centroid. The $k^{th}$ cluster centroid is the vector of the feature means for the observations in the $k^{th}$ cluster and finds the centroid of each cluster.
 
 4. Assign each observation to the cluster whose centroid is closest, by calculating the cluster variation using the sum of the Euclidean distance between the data points and centroids.
 
@@ -50,16 +50,18 @@ library (janitor)
 library (scales) 
 library(knitr)
 library(dplyr)
+library(ggplot2)
 library(corrplot)
 library(ggcorrplot)
+library(cluster) 
+library(factoextra)
+library(NbClust)
 ```
 
 
 ## NBA Statistics in R
 
-Now that we have called all of the necessary dependencies. We can now view NBA statistics in R. 
-
-Based on their respective statistics that have been tracked and documented throughout the season.
+Now that we have called all of the necessary dependencies. We can now view NBA statistics in R. Based on their respective statistics that have been tracked and documented throughout the season.
 
 The statistics include:
 
@@ -117,11 +119,12 @@ We will not be using be the following variables in our analysis
 
 • link
 
+For these do not contribute significant clustering.
+
 ## Exploratory Data Analysis 
 
 Now we will conduct some basic exploratory data analysis to get a better understanding of the data set that we will be using.
-
-We want to use only numeric value rows for this classification process so we will create a data frame with such va.
+First, We will create a data frame using only the numeric value rows to aid in the classification process.
 
 ```{r}
 Per100 <- per_100 %>%
@@ -133,9 +136,7 @@ kable(head (Per100))
 
 ## Correlation
 
-Now let’s examine the correlation between each of these variable to determine which axis to use when constructing and evaluating our clusterplot.
-
-The correlation plot between the different statistical categories will show if there’s anything interesting interactions among them. We will now call the corrpplot library to help visualize the correlation between each variable.
+Now let’s examine the correlation between each of these variable to determine which axis to use when constructing and evaluating our clusterplot. The correlation plot between the different statistical categories will show if there’s anything interesting interactions among them. We will use the ggcorrpplot library to help visualize the correlation between each variable.
 
 ```{r}
 C<-cor(Per100)
@@ -155,7 +156,7 @@ As expected there is no surprises here. I will refer back to this graph in my fi
 
 There are two ways are that we can determine the value of k affects the clustering , so we can make sensible conclusions about the data, the elbow method and the gap statistic.
 
-## The Elbow Method
+### The Elbow Method
 
  The elbow method uses the sum squared deviations within each cluster from each observation and the cluster centroid. A cluster that has a small sum of squares is more tightly compact than oppose to ones with large sums of squares. The score will only get smaller as we increase the value of k and the clusters get smaller. Thus the point of interest in the plot referred to as the “elbow /knee” where the sum of squares value within each cluster drops considerably and then levels out for larger values k. 
 
@@ -167,7 +168,7 @@ First we will generate a set of random numbers to help with this simulation.
 set.seed(123)
 ```
 
-Now with compute and the sum of squares with each cluster from k=2 to k=10
+Now with compute and the sum of squares with each cluster from $k = 2$ to $k = 10$
 
 ```{r}
 k.max <- 10
@@ -181,43 +182,40 @@ wss <- sapply(1:k.max,
 
 ```
 
-Now we can construct a plot of wss for k = 2 to k = 10.
+Now we can construct a plot of wss for $k = 2$ to $k = 10$.
 
 ```{r}
 plot(1:k.max, wss,
      type="b", pch = 19, frame = FALSE, 
      xlab="Number of clusters K",
      ylab="Total within-clusters sum of squares")
-
 ```
 
 As we can see from this plot there is distinctive no elbow/knee present.
 
-Thus we will move onto the second method to find the optimal K value, known as the Gap statistic. The higher the value is for the gap-statistic, the better our value of k is. Again, our goal is to get the best clusters while minimizing k. 
+### Gap Statistic
 
-```{r}
-library(factoextra)
-library(NbClust)
-```
+Thus we will move onto the second method to find the optimal K value, known as the Gap statistic. The higher the value is for the gap-statistic, the better our value of $k$ is. Again, our goal is to get the best clusters while minimizing k. 
+
+
 First we will generate a set of random numbers to help with this simulation.
-```{r}
-set.seed(123)
-```
+
 
 To determine and visualize the optimal number of clusters we will use the following function
 
 ```{r}
+set.seed(123)
 fviz_nbclust(Per100, kmeans, nstart = 25,  method = "gap_stat", nboot = 50)+
   labs(subtitle = "Gap statistic method")
 
 ```
 
-As you can see from the above plot, the gap statistic peaks at k = 8.
+As you can see from the above plot, the gap statistic peaks at $k = 8$.
 
 ## K-Means Cluster Analysis
 
 
-In order to perform k-means clustering on the Per100 data we will use the k-means method function which partitions the points into k groups such that the sum of squares from points to the assigned cluster centres is minimized. 
+In order to perform k-means clustering on the Per100 data we will use the k-means method function which partitions the points into $k$ groups such that the sum of squares from points to the assigned cluster centres is minimized. 
 
 ```{r}
 fit <- kmeans(Per100,8)
@@ -338,9 +336,13 @@ An outlier based on inflation of statistics on a per 100 possession basis.
 Now we will create a simple cluster plot to illustrate the various cluster groups
 
 ```{r}
-library(cluster) 
 clusplot(Per100, fit$cluster, color=TRUE, shade=TRUE, 
          labels=2, lines=0)
+library(fpc)
+plotcluster(Per100, fit$cluster)
+library(ggfortify)
+autoplot(kmeans(Per100, 8), data = Per100, label = TRUE, label.size = 3)
+
 
 ```
 
