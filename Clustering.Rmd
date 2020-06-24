@@ -1,0 +1,346 @@
+---
+title: "Clustering Positions in Basketball"
+author: "Nicholas Burke"
+date: "05 December 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Introduction
+
+This project will perform K-means clustering of NBA data to determine various position groups among players. K-means clustering is a straight forward unsupervised learning approach for sectioning data sets into $K$ distinct, non-overlapping clusters based upon similarities.
+In order to perform K-means clustering, first we need to determine the appropriate number of clusters $K$. The K-means algorithm will then assign each observation to exactly one of the $K$ clusters. Below is a brief outline of the process.
+
+## K-Means Clustering Procedure
+
+1. Assign a number at random, from 1 to $K$, to each of the observations. These are initial cluster assignments for each observations.
+
+2. Iterate until the cluster assignments stop changing.
+
+3. For each of the $K$ clusters, compute the cluster centroid. The $k^{th}$ cluster centroid is the vector of the p feature means for the observations in the $k^{th}$ cluster and finds the centroid of each cluster.
+
+4. Assign each observation to the cluster whose centroid is closest, by calculating the cluster variation using the sum of the Euclidean distance between the data points and centroids.
+
+In order to perform K-means clustering, we must decide how many clusters we expect in the data. Traditional there are 5 positions on a basketball team;
+
+•	Point guard
+
+•	Shooting guard
+
+•	Small forward
+
+•	Power forward
+
+•	Center
+
+We assume naturally that there will be 5 cluster groups, intuitively the game of basketball has evolved over time into a more position-less game. Ultimately we will determine if there exists more or less defined cluster groups. This is an unsupervised learning algorithm meaning that there is no pre-determined outcome , the algorithm just tries to find patterns in the data.  We will define each cluster as the mean of the players.
+
+To best define a player, we will use the per 100 possession stats among various categories using data from the website [basketballreference.com](https://www.basketball-reference.com/).
+
+
+```{r}
+
+library(ballr) 
+library (magrittr) 
+library (ggplot2)
+library (janitor) 
+library (scales) 
+library(knitr)
+library(dplyr)
+library(corrplot)
+library(ggcorrplot)
+```
+
+
+## NBA Statistics in R
+
+Now that we have called all of the necessary dependencies. We can now view NBA statistics in R. 
+
+Based on their respective statistics that have been tracked and documented throughout the season.
+
+The statistics include:
+
+•	Games
+
+•	Games started
+
+•	Minutes
+
+•	 2pt & 3pt field goals/attempts/percentage
+
+•	Free throws/attempts/percentage
+
+• Assists, turnovers
+
+•	Offensive/ Defensive and Total Rebounds
+
+•	Fouls
+
+•	Blocks 
+
+•	Steals
+
+Below are some of the Per-100 possession statistics for each player during the 2018-2019 NBA regular season.
+```{r}
+per_100 <- NBAPerGameStatisticsPer100Poss(season = 2019)
+kable(head(per_100))
+```
+
+Now let’s view the structure of this data set.
+
+```{r}
+str(per_100)
+```
+
+We will not be using be the following variables in our analysis
+
+• rk
+
+• player
+
+• tm
+
+• g, gs
+
+• age
+
+• fg/x3p/x2p percent
+
+• o/d rb
+
+• x
+
+• o/d rtg
+
+• link
+
+## Exploratory Data Analysis 
+
+Now we will conduct some basic exploratory data analysis to get a better understanding of the data set that we will be using.
+
+We want to use only numeric value rows for this classification process so we will create a data frame with such va.
+
+```{r}
+Per100 <- per_100 %>%
+  select(fg,fga,x3p,x3pa,x2p,x2pa,ft,fta,trb,ast,blk,stl,tov,pts)
+kable(head (Per100))
+
+```
+
+
+## Correlation
+
+Now let’s examine the correlation between each of these variable to determine which axis to use when constructing and evaluating our clusterplot.
+
+The correlation plot between the different statistical categories will show if there’s anything interesting interactions among them. We will now call the corrpplot library to help visualize the correlation between each variable.
+
+```{r}
+C<-cor(Per100)
+ggcorrplot(C, hc.order = TRUE, 
+           type = "lower", 
+           lab = TRUE, 
+           lab_size = 3, 
+           method="circle", 
+           colors = c("tomato2", "white", "springgreen3"), 
+           title="Correlogram of NBA Stats", 
+           ggtheme=theme_bw)
+```
+
+As expected there is no surprises here. I will refer back to this graph in my final assessment of each cluster group. 
+
+## Choosing a K value
+
+There are two ways are that we can determine the value of k affects the clustering , so we can make sensible conclusions about the data, the elbow method and the gap statistic.
+
+## The Elbow Method
+
+ The elbow method uses the sum squared deviations within each cluster from each observation and the cluster centroid. A cluster that has a small sum of squares is more tightly compact than oppose to ones with large sums of squares. The score will only get smaller as we increase the value of k and the clusters get smaller. Thus the point of interest in the plot referred to as the “elbow /knee” where the sum of squares value within each cluster drops considerably and then levels out for larger values k. 
+
+Here is the R code for generating the Elbow Method in order to find the optimal number of clusters.
+First we will generate a set of random numbers to help with this simulation.
+
+
+```{r}
+set.seed(123)
+```
+
+Now with compute and the sum of squares with each cluster from k=2 to k=10
+
+```{r}
+k.max <- 10
+```
+
+We will be able to perform k-means clustering on the data matrix Per100.
+
+```{r}
+wss <- sapply(1:k.max, 
+              function(k){kmeans(Per100, k, nstart=50,iter.max = 15 )$tot.withinss})
+
+```
+
+Now we can construct a plot of wss for k = 2 to k = 10.
+
+```{r}
+plot(1:k.max, wss,
+     type="b", pch = 19, frame = FALSE, 
+     xlab="Number of clusters K",
+     ylab="Total within-clusters sum of squares")
+
+```
+
+As we can see from this plot there is distinctive no elbow/knee present.
+
+Thus we will move onto the second method to find the optimal K value, known as the Gap statistic. The higher the value is for the gap-statistic, the better our value of k is. Again, our goal is to get the best clusters while minimizing k. 
+
+```{r}
+library(factoextra)
+library(NbClust)
+```
+First we will generate a set of random numbers to help with this simulation.
+```{r}
+set.seed(123)
+```
+
+To determine and visualize the optimal number of clusters we will use the following function
+
+```{r}
+fviz_nbclust(Per100, kmeans, nstart = 25,  method = "gap_stat", nboot = 50)+
+  labs(subtitle = "Gap statistic method")
+
+```
+
+As you can see from the above plot, the gap statistic peaks at k = 8.
+
+## K-Means Cluster Analysis
+
+
+In order to perform k-means clustering on the Per100 data we will use the k-means method function which partitions the points into k groups such that the sum of squares from points to the assigned cluster centres is minimized. 
+
+```{r}
+fit <- kmeans(Per100,8)
+```
+
+Let’s take a look at the structure
+
+```{r}
+str(fit)
+```
+
+Here is a summary of this data
+
+```{r}
+summary(fit)
+```
+
+We will use the aggregate function to generate the cluster means.
+
+```{r}
+kable(aggregate(Per100,by=list(fit$cluster),FUN=mean), caption = "Cluster Groups")
+```
+
+## Breakdown of Each Cluster Group
+
+Now that we have generated the cluster groups I will identify each group’s stats line a provide an player that would fall into this category.
+
+### Group 1
+
+**HIGH LEVEL STARTER FRINGE ALL STAR**
+
+This position is typically an all-around player, who can contribute to various statistical categories into team’s success such as scoring, defending multiple positions, shooting and distributing the ball well.
+
+**STAT LINE PER 100 POSSESSIONS**
+
+**9.3 FG, 20.8 FGA, 2.9 X3P, 8.2 X3PA, 6.4 X2P, 12.6 X2PA, 3.8 FT, 4.9 FTA,  7.6 TRB, 4.5 AST, 0.7BLK, 1.4 STL, 2.7TOV, 25.2PTS **
+
+Example: Malcolm Brogdon, starting point guard from the Milwaukee Bucks
+
+### Group 3
+
+**SUPERSTAR ALL NBA** 
+
+This player is usually the best player on the team one of the 15 best players in the entire NBA, league leaders in various categories such as points and assists.
+ 
+**STAT LINE PER 100 POSSESSIONS**  
+
+**11.9 FG, 25.6 FGA, 3.3 X3P, 8.5 X3PA, 8.6 X2P, 17.1 X2PA, 5.5 FT, 6.8 FTA,  7.4 TRB, 9.0 AST, 0.6 BLK, 1.9 STL, 3.8 TOV, 32.6 PTS**
+
+Example: James Harden shooting guard for the Houston Rockets 
+
+### Group 4
+
+**OFF THE BENCH SCORING 6TH MAN**
+
+This player comes into the game to give the star players rest and fill in the role to a lesser extent and usually less efficiently
+
+**STAT LINE PER 100 POSSESSIONS** 
+ 
+**6.8 FG, 16.3 FGA ,1.9 X3P, 6.1 X3PA, 4.8 X2P, 10.2 X2PA, 2.7 FT, 3.6 FTA,  6.7 TRB, 5.1 AST, 0.6 BLK, 1.6 STL, 2.5 TOV, 18.2 PTS**
+
+Example: Yogi Ferrell
+
+### Group 5 
+
+**TRADITIONAL BIG REBOUNDER INSIDE SCORING**
+
+Usually the center position does most of the play near the basket, with interior scoring and elite rebounding capabilities.
+
+**STAT LINE PER 100 POSSESSIONS**
+
+**7.0 FG, 14.1 FGA, 0.5 X3P, 1.9 X3PA, 6.5 X2P, 12.2 X2PA 3.6 FT, 5.3 FTA, 14.5 TRB, 3.7 AST, 1.8 BLK, 1.6 STL, 2.6 TOV, 18.1 PTS**
+
+Example: Bam Adebayo
+
+### Group 6
+
+**3 AND D**
+
+Elite three point shooter and great perimeter defender.
+
+**STAT LINE PER 100 POSSESSIONS** 
+
+**5.9 FG, 15.3 FGA, 3.3 X3P, 9.7 X3PA, 2.6 X2P,  5.6 X2PA, 1.8 FT, 2.4 FTA,  6.2 TRB, 3.1 AST, 0.7 BLK, 1.2STL, 1.8 TOV, 16.9 TOV**
+
+Example: JR Smith
+
+### Group 7
+
+**BACK TO THE BASKET SCORING BIG MAN REBOUNDER**
+
+More polished interior and midrange scorer, superb rebounder and focal point of the offense 
+
+**STAT LINE PER 100 POSSESSIONS** 
+
+11.1 FG, 21.8 FGA, 0.7 X3P, 2.6 X3PA, 10.4 X2P, 19.2 X2PA, 5.4 FT, 7.6 FTA, 17.8 TRB, 3.4 AST, 1.7 BLK, 1.2 STL, 3.5 TOV, 28. 4 PTS 
+
+Example: Enes Kanter
+
+### Group8
+
+**ALL AROUND ROLE PLAYER**
+
+Can essentially fill any position on the court on both the defensive and offensive end works well with any line-up combination 
+
+**STAT LINE PER 100 POSSESSIONS**
+
+**3.4 FG, 9.9 FGA, 1.3 X3P, 4.8 X3PA, 2.1 X2P,  5.1 X2PA, 1.2 FT, 1.8 FTA,  8.0 TRB, 3.7 AST, 0.7 BLK, 1.5 STL, 2.1 TOV,  9.3 PTS**
+
+Example: PJ Tucker
+
+### Group 2
+
+An outlier based on inflation of statistics on a per 100 possession basis.
+
+## Clusplot
+
+Now we will create a simple cluster plot to illustrate the various cluster groups
+
+```{r}
+library(cluster) 
+clusplot(Per100, fit$cluster, color=TRUE, shade=TRUE, 
+         labels=2, lines=0)
+
+```
+
