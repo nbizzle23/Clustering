@@ -56,14 +56,17 @@ library(ggcorrplot)
 library(cluster) 
 library(factoextra)
 library(NbClust)
+library(fpc)
+library(ggfortify)
+
 ```
 
 
 ## NBA Statistics in R
 
-Now that we have called all of the necessary dependencies. We can now view NBA statistics in R. Based on their respective statistics that have been tracked and documented throughout the season.
+Now to view NBA statistics in our R console, based on their respective statistics that have been tracked and documented throughout the season.
 
-The statistics include:
+This includes:
 
 •	Games
 
@@ -124,7 +127,7 @@ For these do not contribute significant clustering.
 ## Exploratory Data Analysis 
 
 Now we will conduct some basic exploratory data analysis to get a better understanding of the data set that we will be using.
-First, We will create a data frame using only the numeric value rows to aid in the classification process.
+First, we will create a data frame using only the numeric value rows to aid in the classification process.
 
 ```{r}
 Per100 <- per_100 %>%
@@ -154,27 +157,24 @@ As expected there is no surprises here. I will refer back to this graph in my fi
 
 ## Choosing a K value
 
-There are two ways are that we can determine the value of k affects the clustering , so we can make sensible conclusions about the data, the elbow method and the gap statistic.
+There are two ways are that we can determine the value of $k$ affects the clustering , so we can make sensible conclusions about the data, the elbow method and the gap statistic.
 
 ### The Elbow Method
 
- The elbow method uses the sum squared deviations within each cluster from each observation and the cluster centroid. A cluster that has a small sum of squares is more tightly compact than oppose to ones with large sums of squares. The score will only get smaller as we increase the value of k and the clusters get smaller. Thus the point of interest in the plot referred to as the “elbow /knee” where the sum of squares value within each cluster drops considerably and then levels out for larger values k. 
+ The elbow method uses the sum squared deviations within each cluster from each observation and the cluster centroid. A cluster that has a small sum of squares is more tightly compact than oppose to ones with large sums of squares. The score will only get smaller as we increase the value of k and the clusters get smaller. Thus the point of interest in the plot referred to as the “elbow knee” where the sum of squares value within each cluster drops considerably and then levels out for larger values k. 
 
-Here is the R code for generating the Elbow Method in order to find the optimal number of clusters.
-First we will generate a set of random numbers to help with this simulation.
+For generating the Elbow Method in order to find the optimal number of clusters, first we will generate a set of random numbers to help with this simulation. Computing the sum of squares with each cluster from $k = 2$ to $k = 10$ will allow us to perform k-means clustering on our data frame.
 
 
 ```{r}
 set.seed(123)
 ```
 
-Now with compute and the sum of squares with each cluster from $k = 2$ to $k = 10$
 
 ```{r}
 k.max <- 10
 ```
 
-We will be able to perform k-means clustering on the data matrix Per100.
 
 ```{r}
 wss <- sapply(1:k.max, 
@@ -182,7 +182,7 @@ wss <- sapply(1:k.max,
 
 ```
 
-Now we can construct a plot of wss for $k = 2$ to $k = 10$.
+Below is the plot of the Elbow Method for values $k = 2$ to $k = 10$.
 
 ```{r}
 plot(1:k.max, wss,
@@ -193,15 +193,11 @@ plot(1:k.max, wss,
 
 As we can see from this plot there is distinctive no elbow/knee present.
 
-### Gap Statistic
+### The Gap Statistic 
 
 Thus we will move onto the second method to find the optimal K value, known as the Gap statistic. The higher the value is for the gap-statistic, the better our value of $k$ is. Again, our goal is to get the best clusters while minimizing k. 
 
-
-First we will generate a set of random numbers to help with this simulation.
-
-
-To determine and visualize the optimal number of clusters we will use the following function
+We will generate a set of random numbers to help with this simulation in order to determine and visualize the optimal number of clusters we will graph the graph statistic.
 
 ```{r}
 set.seed(123)
@@ -233,11 +229,33 @@ Here is a summary of this data
 summary(fit)
 ```
 
-We will use the aggregate function to generate the cluster means.
+We will use the aggregate function to generate the cluster means below.
 
 ```{r}
 kable(aggregate(Per100,by=list(fit$cluster),FUN=mean), caption = "Cluster Groups")
 ```
+
+## Visualization
+
+Now we will create a simple cluster plot to illustrate the various cluster groups
+
+```{r}
+clusplot(Per100, fit$cluster, color=TRUE, shade=TRUE, 
+         labels=2, lines=0)
+```
+
+Here is a more fancy plot to help distiguish each cluster.
+```{r}
+plotcluster(Per100, fit$cluster)
+```
+
+Another cluster plot to further illustrate each group.
+```{r}
+autoplot(kmeans(Per100, 8), data = Per100, label = TRUE, label.size = 3)
+```
+
+
+
 
 ## Breakdown of Each Cluster Group
 
@@ -251,9 +269,9 @@ This position is typically an all-around player, who can contribute to various s
 
 **STAT LINE PER 100 POSSESSIONS**
 
-**9.3 FG, 20.8 FGA, 2.9 X3P, 8.2 X3PA, 6.4 X2P, 12.6 X2PA, 3.8 FT, 4.9 FTA,  7.6 TRB, 4.5 AST, 0.7BLK, 1.4 STL, 2.7TOV, 25.2PTS **
+9.3 FG, 20.8 FGA, 2.9 X3P, 8.2 X3PA, 6.4 X2P, 12.6 X2PA, 3.8 FT, 4.9 FTA,  7.6 TRB, 4.5 AST, 0.7BLK, 1.4 STL, 2.7TOV, 25.2PTS 
 
-Example: Malcolm Brogdon, starting point guard from the Milwaukee Bucks
+Example: **Malcolm Brogdon**, starting point guard from the Milwaukee Bucks
 
 ### Group 3
 
@@ -263,9 +281,9 @@ This player is usually the best player on the team one of the 15 best players in
  
 **STAT LINE PER 100 POSSESSIONS**  
 
-**11.9 FG, 25.6 FGA, 3.3 X3P, 8.5 X3PA, 8.6 X2P, 17.1 X2PA, 5.5 FT, 6.8 FTA,  7.4 TRB, 9.0 AST, 0.6 BLK, 1.9 STL, 3.8 TOV, 32.6 PTS**
+11.9 FG, 25.6 FGA, 3.3 X3P, 8.5 X3PA, 8.6 X2P, 17.1 X2PA, 5.5 FT, 6.8 FTA,  7.4 TRB, 9.0 AST, 0.6 BLK, 1.9 STL, 3.8 TOV, 32.6 PTS
 
-Example: James Harden shooting guard for the Houston Rockets 
+Example: **James Harden**, shooting guard for the Houston Rockets 
 
 ### Group 4
 
@@ -273,11 +291,11 @@ Example: James Harden shooting guard for the Houston Rockets
 
 This player comes into the game to give the star players rest and fill in the role to a lesser extent and usually less efficiently
 
-**STAT LINE PER 100 POSSESSIONS** 
+STAT LINE PER 100 POSSESSIONS
  
-**6.8 FG, 16.3 FGA ,1.9 X3P, 6.1 X3PA, 4.8 X2P, 10.2 X2PA, 2.7 FT, 3.6 FTA,  6.7 TRB, 5.1 AST, 0.6 BLK, 1.6 STL, 2.5 TOV, 18.2 PTS**
+6.8 FG, 16.3 FGA ,1.9 X3P, 6.1 X3PA, 4.8 X2P, 10.2 X2PA, 2.7 FT, 3.6 FTA,  6.7 TRB, 5.1 AST, 0.6 BLK, 1.6 STL, 2.5 TOV, 18.2 PTS
 
-Example: Yogi Ferrell
+Example: **Yogi Ferrell**, back up point guard for the Sacramento Kings
 
 ### Group 5 
 
@@ -287,9 +305,9 @@ Usually the center position does most of the play near the basket, with interior
 
 **STAT LINE PER 100 POSSESSIONS**
 
-**7.0 FG, 14.1 FGA, 0.5 X3P, 1.9 X3PA, 6.5 X2P, 12.2 X2PA 3.6 FT, 5.3 FTA, 14.5 TRB, 3.7 AST, 1.8 BLK, 1.6 STL, 2.6 TOV, 18.1 PTS**
+7.0 FG, 14.1 FGA, 0.5 X3P, 1.9 X3PA, 6.5 X2P, 12.2 X2PA 3.6 FT, 5.3 FTA, 14.5 TRB, 3.7 AST, 1.8 BLK, 1.6 STL, 2.6 TOV, 18.1 PTS
 
-Example: Bam Adebayo
+Example: **Bam Adebayo**, point centre for the Miami Heat
 
 ### Group 6
 
@@ -299,50 +317,35 @@ Elite three point shooter and great perimeter defender.
 
 **STAT LINE PER 100 POSSESSIONS** 
 
-**5.9 FG, 15.3 FGA, 3.3 X3P, 9.7 X3PA, 2.6 X2P,  5.6 X2PA, 1.8 FT, 2.4 FTA,  6.2 TRB, 3.1 AST, 0.7 BLK, 1.2STL, 1.8 TOV, 16.9 TOV**
+5.9 FG, 15.3 FGA, 3.3 X3P, 9.7 X3PA, 2.6 X2P,  5.6 X2PA, 1.8 FT, 2.4 FTA,  6.2 TRB, 3.1 AST, 0.7 BLK, 1.2STL, 1.8 TOV, 16.9 TOV
 
-Example: JR Smith
+Example: **JR Smith**, shooting guard for the Cleveland Cavaliers
 
 ### Group 7
 
 **BACK TO THE BASKET SCORING BIG MAN REBOUNDER**
 
-More polished interior and midrange scorer, superb rebounder and focal point of the offense 
+More polished interior and mid range scorer, superb rebounder and focal point of the offense 
 
 **STAT LINE PER 100 POSSESSIONS** 
 
 11.1 FG, 21.8 FGA, 0.7 X3P, 2.6 X3PA, 10.4 X2P, 19.2 X2PA, 5.4 FT, 7.6 FTA, 17.8 TRB, 3.4 AST, 1.7 BLK, 1.2 STL, 3.5 TOV, 28. 4 PTS 
 
-Example: Enes Kanter
+Example: **Enes Kanter**, power forward for the Boston Celtics
 
-### Group8
+### Group 8
 
 **ALL AROUND ROLE PLAYER**
 
 Can essentially fill any position on the court on both the defensive and offensive end works well with any line-up combination 
 
-**STAT LINE PER 100 POSSESSIONS**
+**STAT LINE PER 100 POSSESIONS**
 
-**3.4 FG, 9.9 FGA, 1.3 X3P, 4.8 X3PA, 2.1 X2P,  5.1 X2PA, 1.2 FT, 1.8 FTA,  8.0 TRB, 3.7 AST, 0.7 BLK, 1.5 STL, 2.1 TOV,  9.3 PTS**
+3.4 FG, 9.9 FGA, 1.3 X3P, 4.8 X3PA, 2.1 X2P,  5.1 X2PA, 1.2 FT, 1.8 FTA,  8.0 TRB, 3.7 AST, 0.7 BLK, 1.5 STL, 2.1 TOV,  9.3 PTS
 
-Example: PJ Tucker
+Example: **PJ Tucker**, stretch 4 man for the Houston Rockets
 
 ### Group 2
 
 An outlier based on inflation of statistics on a per 100 possession basis.
-
-## Clusplot
-
-Now we will create a simple cluster plot to illustrate the various cluster groups
-
-```{r}
-clusplot(Per100, fit$cluster, color=TRUE, shade=TRUE, 
-         labels=2, lines=0)
-library(fpc)
-plotcluster(Per100, fit$cluster)
-library(ggfortify)
-autoplot(kmeans(Per100, 8), data = Per100, label = TRUE, label.size = 3)
-
-
-```
 

@@ -1,5 +1,5 @@
 # Clustering
-[Clustering](https://rpubs.com/nburke2/557033) NBA players into various positions based on statistics from the 2018-2019 regular season.
+[Clustering](https://rpubs.com/nburke2/636812) NBA players into various positions based on statistics from the 2018-2019 regular season.
  
 ## Getting Started
 
@@ -20,6 +20,11 @@ install.packages(ggplot2)
 install.packages(ggthemes)
 install.packages(corrplot)
 install.packages(ggcorrplot)
+install.packages(cluster) 
+install.packages(factoextra)
+install.packages(NbClust)
+install.packages(fpc)
+install.packages(ggfortify)
 ```
 
 ### Installing
@@ -36,7 +41,11 @@ library(ggplot2)
 library(ggthemes)
 library(corrplot)
 library(ggcorrplot)
-
+library(cluster) 
+library(factoextra)
+library(NbClust)
+library(fpc)
+library(ggfortify)
 
 ```
 
@@ -44,9 +53,6 @@ library(ggcorrplot)
 Will be able to recreate this html document.
 
 
-## Deployment
-
-Add additional notes about how to deploy this on a live system
 
 ## Built With
 

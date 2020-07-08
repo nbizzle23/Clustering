@@ -182,7 +182,7 @@ summary {
 
 <div id="clustering" class="section level1">
 <h1>Clustering</h1>
-<p><a href="https://rpubs.com/nburke2/557033">Clustering</a> NBA players into various positions based on statistics from the 2018-2019 regular season.</p>
+<p><a href="https://rpubs.com/nburke2/636812">Clustering</a> NBA players into various positions based on statistics from the 2018-2019 regular season.</p>
 <div id="getting-started" class="section level2">
 <h2>Getting Started</h2>
 <p>This code can directly inputted into your on your local machine to produce the resulting html and images . See section below on how to replicated this project in RStudio.</p>
@@ -194,10 +194,16 @@ install.packages(janitor)
 install.packages(scales) 
 install.packages(ballr)
 install.packages(knitr)
-install.packages(shiny)
+install.packages(dplyr)
 install.packages(ggplot2)
 install.packages(ggthemes)
-install.packages(caTools)</code></pre>
+install.packages(corrplot)
+install.packages(ggcorrplot)
+install.packages(cluster) 
+install.packages(factoextra)
+install.packages(NbClust)
+install.packages(fpc)
+install.packages(ggfortify)</code></pre>
 </div>
 <div id="installing" class="section level3">
 <h3>Installing</h3>
@@ -209,15 +215,16 @@ library(ballr)
 library(knitr)
 library(ggplot2)
 library(ggthemes)
-library(caTools)
-
+library(corrplot)
+library(ggcorrplot)
+library(cluster) 
+library(factoextra)
+library(NbClust)
+library(fpc)
+library(ggfortify)
 </code></pre>
 <p>Will be able to recreate this html document.</p>
 </div>
-</div>
-<div id="deployment" class="section level2">
-<h2>Deployment</h2>
-<p>Add additional notes about how to deploy this on a live system</p>
 </div>
 <div id="built-with" class="section level2">
 <h2>Built With</h2>
